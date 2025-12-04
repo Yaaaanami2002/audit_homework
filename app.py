@@ -12,6 +12,8 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_LEFT
 from reportlab.lib import colors
 import io
+import urllib.request
+import tempfile
 
 # 应用界面
 app_ui = ui.page_fluid(
@@ -199,7 +201,7 @@ app_ui = ui.page_fluid(
                     ui.hr(),
                     ui.download_button(
                         "download_btn",
-                        "下载审计报告",
+                        "下载审计报告 (PDF)",
                         class_="btn-success",
                         width="100%"
                     ),
@@ -242,8 +244,8 @@ def server(input, output, session):
         try:
             # 调用通义千问 API
             response = Application.call(
-                api_key="sk-f1c91367a7ff4f0c87c4f54f5d696138",
-                app_id='61bfdc9175fe4597b4516db2cd70c319',
+                api_key="sk-2d1d971450e441ea8d6f1526fc2d78c7",
+                app_id='424abb0483f441a285f1c2b983276666',
                 prompt=user_question
             )
             
