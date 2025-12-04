@@ -199,7 +199,7 @@ app_ui = ui.page_fluid(
                     ui.hr(),
                     ui.download_button(
                         "download_btn",
-                        "下载审计报告 (PDF)",
+                        "下载审计报告",
                         class_="btn-success",
                         width="100%"
                     ),
@@ -242,8 +242,8 @@ def server(input, output, session):
         try:
             # 调用通义千问 API
             response = Application.call(
-                api_key="sk-2d1d971450e441ea8d6f1526fc2d78c7",
-                app_id='424abb0483f441a285f1c2b983276666',
+                api_key="sk-f1c91367a7ff4f0c87c4f54f5d696138",
+                app_id='61bfdc9175fe4597b4516db2cd70c319',
                 prompt=user_question
             )
             
@@ -304,127 +304,193 @@ def server(input, output, session):
         # 使用 BytesIO 创建 PDF
         buffer = io.BytesIO()
         
-        # 使用 SimpleDocTemplate 创建 PDF
-        doc = SimpleDocTemplate(buffer, pagesize=A4,
-                               leftMargin=2*cm, rightMargin=2*cm,
-                               topMargin=2*cm, bottomMargin=2*cm)
-        
-        # 注册中文字体
+        # 注册中文字体 - 关键:处理 TTC 文件
         font_registered = False
+        chinese_font_name = 'Helvetica'
+        
         try:
-            font_paths = [
-                ('C:\\Windows\\Fonts\\simsun.ttc', 'SimSun'),
-                ('C:\\Windows\\Fonts\\msyh.ttc', 'Microsoft YaHei'),
-                ('C:\\Windows\\Fonts\\simhei.ttf', 'SimHei'),
-                ('/System/Library/Fonts/PingFang.ttc', 'PingFang'),
-                ('/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf', 'DroidSans'),
-            ]
+            # Windows 系统字体路径
+            if os.name == 'nt':  # Windows
+                font_candidates = [
+                    ('C:\\Windows\\Fonts\\msyh.ttc', 'Microsoft-YaHei'),  # 微软雅黑
+                    ('C:\\Windows\\Fonts\\simsun.ttc', 'SimSun'),  # 宋体
+                    ('C:\\Windows\\Fonts\\simhei.ttf', 'SimHei'),  # 黑体
+                ]
+            else:  # macOS/Linux
+                font_candidates = [
+                    ('/System/Library/Fonts/PingFang.ttc', 'PingFang'),
+                    ('/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf', 'Droid'),
+                ]
             
-            for font_path, font_name in font_paths:
+            for font_path, font_base_name in font_candidates:
                 if os.path.exists(font_path):
                     try:
-                        pdfmetrics.registerFont(TTFont('CustomChinese', font_path))
+                        # TTC 文件需要指定子字体索引
+                        if font_path.endswith('.ttc'):
+                            # 尝试加载 TTC 文件的第一个字体
+                            from reportlab.pdfbase.ttfonts import TTFont
+                            pdfmetrics.registerFont(TTFont('ChineseFont', font_path, subfontIndex=0))
+                        else:
+                            pdfmetrics.registerFont(TTFont('ChineseFont', font_path))
+                        
+                        chinese_font_name = 'ChineseFont'
                         font_registered = True
                         break
-                    except:
+                    except Exception as e:
+                        print(f"字体加载失败 {font_path}: {e}")
                         continue
-        except:
-            pass
+        except Exception as e:
+            print(f"字体注册错误: {e}")
+        
+        # 使用 SimpleDocTemplate 创建 PDF
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=A4,
+            leftMargin=2*cm,
+            rightMargin=2*cm,
+            topMargin=2.5*cm,
+            bottomMargin=2.5*cm
+        )
         
         # 创建样式
         styles = getSampleStyleSheet()
         
         # 标题样式
         title_style = ParagraphStyle(
-            'CustomTitle',
-            parent=styles['Heading1'],
-            fontSize=24,
-            textColor='black',
-            spaceAfter=30,
-            alignment=TA_LEFT,
-            fontName='CustomChinese' if font_registered else 'Helvetica-Bold'
+            'TitleStyle',
+            parent=styles['Title'],
+            fontSize=22,
+            leading=28,
+            textColor=colors.HexColor('#333333'),
+            spaceAfter=20,
+            fontName='Helvetica-Bold'
         )
         
-        # 副标题样式
-        heading_style = ParagraphStyle(
-            'CustomHeading',
-            parent=styles['Heading2'],
-            fontSize=14,
-            textColor='black',
-            spaceAfter=12,
-            fontName='CustomChinese' if font_registered else 'Helvetica-Bold'
-        )
-        
-        # 正文样式
-        body_style = ParagraphStyle(
-            'CustomBody',
-            parent=styles['BodyText'],
-            fontSize=11,
-            leading=20,
-            textColor='black',
-            spaceAfter=12,
-            fontName='CustomChinese' if font_registered else 'Helvetica',
-            wordWrap='CJK'
-        )
-        
-        # 小字样式
-        small_style = ParagraphStyle(
-            'CustomSmall',
+        # 小标题样式
+        subtitle_style = ParagraphStyle(
+            'SubtitleStyle',
             parent=styles['Normal'],
             fontSize=9,
-            textColor='grey',
+            textColor=colors.HexColor('#666666'),
+            spaceAfter=30,
             fontName='Helvetica'
         )
         
-        # 构建 PDF 内容
+        # 章节标题样式
+        heading_style = ParagraphStyle(
+            'HeadingStyle',
+            parent=styles['Heading2'],
+            fontSize=14,
+            leading=20,
+            textColor=colors.HexColor('#1a1a1a'),
+            spaceAfter=15,
+            spaceBefore=10,
+            fontName='Helvetica-Bold'
+        )
+        
+        # 正文样式 - 使用中文字体
+        body_style = ParagraphStyle(
+            'BodyStyle',
+            parent=styles['BodyText'],
+            fontSize=10,
+            leading=18,
+            textColor=colors.HexColor('#333333'),
+            spaceAfter=10,
+            leftIndent=15,
+            fontName=chinese_font_name,
+            wordWrap='CJK' if font_registered else None
+        )
+        
+        # 构建文档内容
         story = []
         
-        # 标题
+        # 添加标题
         story.append(Paragraph("AI Audit Report", title_style))
-        story.append(Spacer(1, 0.3*cm))
         
-        # 生成时间
-        story.append(Paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", small_style))
-        story.append(Spacer(1, 0.5*cm))
+        # 添加生成时间
+        gen_time = f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        story.append(Paragraph(gen_time, subtitle_style))
         
-        # 分隔线 (使用表格模拟)
-        from reportlab.platypus import Table, TableStyle
-        from reportlab.lib import colors
+        # 添加分隔线
         line_table = Table([['']], colWidths=[doc.width])
         line_table.setStyle(TableStyle([
-            ('LINEABOVE', (0,0), (-1,0), 1, colors.grey),
+            ('LINEABOVE', (0, 0), (-1, 0), 1.5, colors.HexColor('#cccccc')),
         ]))
         story.append(line_table)
         story.append(Spacer(1, 0.5*cm))
         
-        # 用户问题
+        # 用户问题部分
         story.append(Paragraph("User Question:", heading_style))
-        # 处理用户问题文本
-        question_paragraphs = user_question.split('\n')
-        for para in question_paragraphs:
-            if para.strip():
-                story.append(Paragraph(para, body_style))
-        story.append(Spacer(1, 0.5*cm))
         
-        # 分隔线
+        # 处理用户问题 - 按段落分割
+        for paragraph in user_question.split('\n'):
+            if paragraph.strip():
+                # 清理文本,移除所有 HTML 标签和特殊字符
+                safe_para = (paragraph
+                    .replace('&', '&amp;')
+                    .replace('<', '&lt;')
+                    .replace('>', '&gt;')
+                    .replace('"', '&quot;')
+                    .replace("'", '&apos;'))
+                try:
+                    story.append(Paragraph(safe_para, body_style))
+                except Exception as e:
+                    # 如果段落解析失败,使用纯文本
+                    print(f"段落解析失败: {e}")
+                    story.append(Paragraph(paragraph.strip(), body_style))
+        
+        story.append(Spacer(1, 0.3*cm))
         story.append(line_table)
         story.append(Spacer(1, 0.5*cm))
         
-        # AI 回复
+        # AI 回复部分
         story.append(Paragraph("AI Response:", heading_style))
-        # 处理 AI 回复文本
-        response_paragraphs = response_text.split('\n')
-        for para in response_paragraphs:
-            if para.strip():
-                # 替换 Markdown 标记为 HTML
-                para = para.replace('**', '<b>').replace('**', '</b>')
-                para = para.replace('##', '').replace('#', '')
-                story.append(Paragraph(para, body_style))
         
-        # 生成 PDF
-        doc.build(story)
+        # 处理 AI 回复 - 按段落分割
+        for paragraph in response_text.split('\n'):
+            if paragraph.strip():
+                # 清理文本,移除所有可能导致解析错误的内容
+                safe_para = paragraph.strip()
+                
+                # 移除 Markdown 标记
+                safe_para = safe_para.replace('###', '').replace('##', '').replace('#', '')
+                safe_para = safe_para.replace('**', '').replace('__', '')
+                safe_para = safe_para.replace('```', '')
+                
+                # 转义 HTML 特殊字符
+                safe_para = (safe_para
+                    .replace('&', '&amp;')
+                    .replace('<', '&lt;')
+                    .replace('>', '&gt;')
+                    .replace('"', '&quot;')
+                    .replace("'", '&apos;'))
+                
+                try:
+                    story.append(Paragraph(safe_para, body_style))
+                except Exception as e:
+                    # 如果段落解析失败,记录错误但继续
+                    print(f"段落解析失败: {e}, 文本: {safe_para[:50]}...")
+                    # 尝试使用更简单的文本
+                    try:
+                        simple_text = ''.join(c for c in paragraph if c.isprintable() or c in '\n\r\t')
+                        story.append(Paragraph(simple_text, body_style))
+                    except:
+                        pass  # 跳过这个段落
         
-        # 重置 buffer 位置并返回
+        # 构建 PDF
+        try:
+            doc.build(story)
+        except Exception as e:
+            print(f"PDF 构建错误: {e}")
+            # 如果构建失败,创建一个简单的错误 PDF
+            buffer = io.BytesIO()
+            c = canvas.Canvas(buffer, pagesize=A4)
+            c.setFont('Helvetica', 12)
+            c.drawString(100, 800, "PDF Generation Error")
+            c.drawString(100, 780, f"Error: {str(e)}")
+            c.save()
+        
+        # 返回 PDF 数据
         buffer.seek(0)
         yield buffer.read()
 
