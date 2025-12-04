@@ -15,7 +15,7 @@ import tempfile
 
 # 应用界面
 app_ui = ui.page_fluid(
-    ui.panel_title("AI 智能助手"),
+    ui.panel_title("    审计AI助手"),
     ui.layout_sidebar(
         ui.sidebar(
             ui.input_text_area(
@@ -300,4 +300,5 @@ def server(input, output, session):
         yield buffer.read()
 
 # 创建应用
+
 app = App(app_ui, server)
