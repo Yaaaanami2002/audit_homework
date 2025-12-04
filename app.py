@@ -197,9 +197,9 @@ app_ui = ui.page_fluid(
                         width="100%"
                     ),
                     ui.hr(),
-                    ui.input_action_button(
+                    ui.download_button(
                         "download_btn",
-                        "下载审计报告 (PDF)",
+                        "下载审计报告",
                         class_="btn-success",
                         width="100%"
                     ),
@@ -207,7 +207,7 @@ app_ui = ui.page_fluid(
                 width=420
             ),
             ui.card(
-                ui.card_header("分析结果"),
+                ui.card_header("AI 分析结果"),
                 ui.div(
                     {"class": "response-box"},
                     ui.output_ui("ai_response")
