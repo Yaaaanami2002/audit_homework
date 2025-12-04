@@ -15,35 +15,208 @@ import tempfile
 
 # 应用界面
 app_ui = ui.page_fluid(
-    ui.panel_title("    审计AI助手"),
-    ui.layout_sidebar(
-        ui.sidebar(
-            ui.input_text_area(
-                "user_input",
-                "输入您的问题:",
-                placeholder="请在这里输入您想要咨询的问题...",
-                rows=5,
-                width="100%"
+    # 自定义 CSS 样式
+    ui.tags.head(
+        ui.tags.style("""
+            @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap');
+            
+            body {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                font-family: 'Noto Sans SC', sans-serif;
+                min-height: 100vh;
+            }
+            
+            .app-title {
+                text-align: center;
+                font-size: 2.8rem;
+                font-weight: 700;
+                color: white;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+                padding: 2rem 0 1.5rem 0;
+                margin: 0;
+                letter-spacing: 2px;
+            }
+            
+            .app-subtitle {
+                text-align: center;
+                font-size: 1rem;
+                color: rgba(255,255,255,0.9);
+                margin-bottom: 2rem;
+                font-weight: 300;
+            }
+            
+            .main-container {
+                max-width: 1400px;
+                margin: 0 auto;
+                padding: 0 20px;
+            }
+            
+            .sidebar {
+                background: white;
+                border-radius: 15px;
+                padding: 25px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                height: fit-content;
+            }
+            
+            .sidebar label {
+                font-weight: 600;
+                color: #333;
+                font-size: 1.05rem;
+                margin-bottom: 8px;
+            }
+            
+            textarea {
+                border: 2px solid #e0e0e0;
+                border-radius: 10px;
+                padding: 12px;
+                font-size: 0.95rem;
+                transition: all 0.3s ease;
+            }
+            
+            textarea:focus {
+                border-color: #667eea;
+                box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+                outline: none;
+            }
+            
+            .btn-primary {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border: none;
+                border-radius: 10px;
+                padding: 12px 24px;
+                font-size: 1.05rem;
+                font-weight: 600;
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 15px rgba(102,126,234,0.4);
+            }
+            
+            .btn-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(102,126,234,0.6);
+            }
+            
+            .btn-success {
+                background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+                border: none;
+                border-radius: 10px;
+                padding: 12px 24px;
+                font-size: 1.05rem;
+                font-weight: 600;
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 15px rgba(17,153,142,0.4);
+            }
+            
+            .btn-success:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(17,153,142,0.6);
+            }
+            
+            .card {
+                background: white;
+                border-radius: 15px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                border: none;
+                overflow: hidden;
+            }
+            
+            .card-header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 20px 25px;
+                font-size: 1.3rem;
+                font-weight: 600;
+                border: none;
+            }
+            
+            .response-box {
+                padding: 25px;
+                background-color: #f8f9fa;
+                border-radius: 12px;
+                min-height: 250px;
+                margin: 20px;
+                font-size: 1rem;
+                line-height: 1.7;
+            }
+            
+            .status-indicator {
+                padding: 15px 20px;
+                margin: 0 20px 20px 20px;
+                background: #e3f2fd;
+                border-radius: 10px;
+                border-left: 4px solid #2196f3;
+                font-weight: 500;
+                color: #1565c0;
+            }
+            
+            .loading-text {
+                color: #667eea;
+                font-weight: 500;
+            }
+            
+            .waiting-text {
+                color: #9e9e9e;
+                font-style: italic;
+            }
+            
+            hr {
+                border: none;
+                height: 1px;
+                background: linear-gradient(to right, transparent, #e0e0e0, transparent);
+                margin: 20px 0;
+            }
+            
+            .fa-spinner {
+                color: #667eea;
+            }
+        """)
+    ),
+    
+    ui.div(
+        {"class": "main-container"},
+        # 标题
+        ui.h1("审计 AI 助手", class_="app-title"),
+        ui.p("智能分析 · 专业报告 · 高效决策", class_="app-subtitle"),
+        
+        # 主要内容区域
+        ui.layout_sidebar(
+            ui.sidebar(
+                ui.div(
+                    {"class": "sidebar"},
+                    ui.input_text_area(
+                        "user_input",
+                        "输入您的问题",
+                        placeholder="请在这里输入您想要咨询的问题...",
+                        rows=6,
+                        width="100%"
+                    ),
+                    ui.input_action_button(
+                        "submit_btn",
+                        "提交问题",
+                        class_="btn-primary",
+                        width="100%"
+                    ),
+                    ui.hr(),
+                    ui.input_action_button(
+                        "download_btn",
+                        "下载审计报告 (PDF)",
+                        class_="btn-success",
+                        width="100%"
+                    ),
+                ),
+                width=420
             ),
-            ui.input_action_button(
-                "submit_btn",
-                "提交问题",
-                class_="btn-primary",
-                width="100%"
-            ),
-            ui.hr(),
-            ui.download_button(
-                "download_btn",
-                "下载审计报告(PDF)",
-                class_="btn-success",
-                width="100%"
-            ),
-            width=400
-        ),
-        ui.card(
-            ui.card_header("AI 回复结果"),
-            ui.output_ui("ai_response"),
-            ui.output_text_verbatim("loading_status")
+            ui.card(
+                ui.card_header("分析结果"),
+                ui.div(
+                    {"class": "response-box"},
+                    ui.output_ui("ai_response")
+                ),
+                ui.div(
+                    {"class": "status-indicator"},
+                    ui.output_text_verbatim("loading_status")
+                )
+            )
         )
     )
 )
@@ -144,20 +317,17 @@ def server(input, output, session):
         response_text = ai_result.get()
         
         if response_text and response_text != "正在思考中,请稍候...":
-            return ui.div(
-                ui.markdown(response_text),
-                style="padding: 15px; background-color: #f8f9fa; border-radius: 5px; min-height: 200px;"
-            )
+            return ui.markdown(response_text)
         elif response_text == "正在思考中,请稍候...":
             return ui.div(
                 ui.tags.i(class_="fa fa-spinner fa-spin"),
                 " 正在思考中,请稍候...",
-                style="padding: 15px; color: #007bff;"
+                class_="loading-text"
             )
         else:
             return ui.div(
-                "等待您的问题...",
-                style="padding: 15px; color: #6c757d; font-style: italic;"
+                "💡 等待您的问题...",
+                class_="waiting-text"
             )
     
     @output
@@ -300,5 +470,4 @@ def server(input, output, session):
         yield buffer.read()
 
 # 创建应用
-
 app = App(app_ui, server)
